@@ -17,9 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->foreignId('job_title_id')->nullable()->constrained(); // Tambahkan ini
-            $table->foreignId('organization_id')->nullable()->constrained(); // Tambahkan ini
-            $table->boolean('otp_enabled')->default(true); // Untuk fitur On/Off OTP
+            $table->boolean('otp_enabled')->default(true);
             $table->string('otp_code')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
             $table->rememberToken();
