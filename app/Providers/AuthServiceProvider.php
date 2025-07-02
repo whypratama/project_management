@@ -24,7 +24,7 @@ class AuthServiceProvider extends ServiceProvider
         Organization::class => OrganizationPolicy::class,
         JobTitle::class => JobTitlePolicy::class,
         Project::class => ProjectPolicy::class, // Akan kita buat nanti
-        Task::class => TaskPolicy::class,       // Akan kita buat nanti
+        Task::class => TaskPolicy::class,
     ];
 
     /**

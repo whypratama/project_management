@@ -9,11 +9,30 @@ class Project extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'start_date', 'end_date', 'status', 'creator_id'];
+    protected $fillable = [
+        'name', 
+        'description', 
+        'start_date', 
+        'end_date', 
+        'status', 
+        'creator_id',
+        'organization_id', // Tambahkan ini
+    ];
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+    ];
 
     public function creator()
     {
         return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    // Tambahkan relasi ini
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     public function tasks()
@@ -21,7 +40,6 @@ class Project extends Model
         return $this->hasMany(Task::class);
     }
 
-    // Relasi Polimorfik
     public function messages()
     {
         return $this->morphMany(Message::class, 'messageable');

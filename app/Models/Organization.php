@@ -25,4 +25,19 @@ class Organization extends Model
     {
         return $this->hasMany(Organization::class, 'parent_id');
     }
+
+    /**
+     * Mengambil semua ID anak dari unit organisasi ini secara rekursif.
+     *
+     * @return array
+     */
+    public function getAllChildIds(): array
+    {
+        $childIds = [];
+        foreach ($this->children as $child) {
+            $childIds[] = $child->id;
+            $childIds = array_merge($childIds, $child->getAllChildIds());
+        }
+        return $childIds;
+    }
 }

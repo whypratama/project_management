@@ -9,7 +9,24 @@ class Task extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'project_id', 'assigned_to', 'creator_id', 'status', 'due_date'];
+    protected $fillable = [
+        'name', 
+        'description', 
+        'project_id', 
+        'assigned_to', 
+        'creator_id', 
+        'status', 
+        'due_date'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'due_date' => 'date', // Tambahkan baris ini
+    ];
 
     public function project()
     {
@@ -26,7 +43,6 @@ class Task extends Model
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    // Relasi Polimorfik
     public function messages()
     {
         return $this->morphMany(Message::class, 'messageable');

@@ -4,7 +4,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\JobTitleController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
+
 
 // Halaman utama, arahkan ke login
 Route::get('/', function () {
@@ -28,7 +31,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('organizations', OrganizationController::class);
     Route::resource('job_titles', JobTitleController::class);
-    // Route untuk Project akan kita tambahkan di sini nanti
+    Route::resource('projects', ProjectController::class);
+
+    Route::post('projects/{project}/tasks', [TaskController::class, 'store'])->name('projects.tasks.store');
+    Route::put('tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+    
 });
 
 // Route autentikasi bawaan Breeze
