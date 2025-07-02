@@ -15,7 +15,7 @@ class TaskController extends BaseController
 
     public function store(Request $request, Project $project)
     {
-        // PERUBAHAN DI SINI: Menggunakan izin 'addTask' yang lebih spesifik
+        // Menggunakan izin 'addTask' yang lebih spesifik
         $this->authorize('addTask', $project);
 
         $request->validate([
@@ -38,19 +38,24 @@ class TaskController extends BaseController
     {
         $this->authorize('update', $task);
 
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'assigned_to' => 'nullable|exists:users,id',
-            'due_date' => 'nullable|date',
-            'status' => 'required|string',
-        ]);
-
-        if ($request->has('status') && $task->creator_id !== auth()->id()) {
-            unset($validatedData['status']);
-            session()->flash('warning', 'Anda tidak memiliki izin untuk mengubah status tugas ini.');
+        $user = auth()->user();
+        $rules = [];
+        
+        // Bangun aturan validasi berdasarkan hak akses spesifik.
+        if ($user->can('updateDetails', $task)) {
+            $rules += [
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'assigned_to' => 'nullable|exists:users,id',
+                'due_date' => 'nullable|date',
+            ];
+        }
+        if ($user->can('updateStatus', $task)) {
+            $rules += ['status' => 'required|string'];
         }
 
+        // Validasi hanya field yang relevan.
+        $validatedData = $request->validate($rules);
         $task->update($validatedData);
 
         return back()->with('success', 'Tugas berhasil diperbarui.');

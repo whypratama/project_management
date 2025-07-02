@@ -44,10 +44,6 @@ class ProjectPolicy
         return $user->jobTitle && in_array($user->jobTitle->name, ['Direksi', 'Pemimpin Divisi', 'Pemimpin Departemen']);
     }
 
-    /**
-     * Tentukan apakah user bisa MENGEDIT DETAIL PROYEK.
-     * Aturan ini sekarang ketat: hanya pembuat proyek.
-     */
     public function update(User $user, Project $project): bool
     {
         return $user->id === $project->creator_id;
@@ -55,16 +51,50 @@ class ProjectPolicy
 
     /**
      * Tentukan apakah user bisa MENAMBAH TUGAS (Mendelegasikan).
-     * Aturan ini lebih longgar: jika bisa lihat, bisa delegasikan.
+     * Aturan ini sekarang lebih ketat dan tidak berlaku untuk Staff.
      */
     public function addTask(User $user, Project $project): bool
     {
-        return $this->view($user, $project);
+        // Izinkan jika user adalah pembuat proyek.
+        if ($user->id === $project->creator_id) {
+            return true;
+        }
+
+        // Izinkan jika user adalah Atasan yang bertanggung jawab atas proyek ini.
+        if ($user->organization && $user->jobTitle?->name !== 'Staff') {
+            $managerOrgScopeIds = array_unique(array_merge([$user->organization->id], $user->organization->getAllChildIds()));
+            if (in_array($project->organization_id, $managerOrgScopeIds)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    /**
-     * Tentukan apakah user bisa menghapus proyek.
-     */
+
+        public function addFile(User $user, Project $project): bool
+    {
+        // Izinkan jika user adalah pembuat proyek.
+        if ($user->id === $project->creator_id) {
+            return true;
+        }
+
+        // Izinkan jika user adalah Atasan yang bertanggung jawab atas proyek ini.
+        if ($user->organization && $user->jobTitle?->name !== 'Staff') {
+            $managerOrgScopeIds = array_unique(array_merge([$user->organization->id], $user->organization->getAllChildIds()));
+            if (in_array($project->organization_id, $managerOrgScopeIds)) {
+                return true;
+            }
+        }
+
+        if (Task::where('project_id', $project->id)->where('assigned_to', $user->id)->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
+
     public function delete(User $user, Project $project): bool
     {
         return $user->id === $project->creator_id;

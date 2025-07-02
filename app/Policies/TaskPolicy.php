@@ -17,32 +17,38 @@ class TaskPolicy
     }
 
     /**
-     * Tentukan apakah user bisa mengupdate tugas.
+     * Izin umum untuk membuka form edit.
+     * User bisa membuka form jika ia bisa mengubah detail ATAU status.
      */
     public function update(User $user, Task $task): bool
     {
-        // Aturan 1: User adalah pembuat asli tugas tersebut.
-        if ($user->id === $task->creator_id) {
-            return true;
-        }
-
-        // Aturan 2: User adalah orang yang ditugaskan, TAPI dia tidak bisa mengubah statusnya sendiri.
-        // Logika ini akan kita terapkan di Controller, bukan di sini.
-        // Di sini kita hanya berikan izin edit secara umum.
-        if ($user->id === $task->assigned_to) {
-            return true;
-        }
-        
-        // Aturan 3: User adalah pembuat proyek (atasan tertinggi dalam konteks ini).
-        return $user->id === $task->project->creator_id;
+        return $this->updateDetails($user, $task) || $this->updateStatus($user, $task);
     }
 
     /**
-     * Tentukan apakah user bisa menghapus tugas.
+     * Izin untuk mengubah detail tugas (nama, deskripsi, dll).
+     * Hanya pembuat proyek atau pembuat tugas yang bisa.
+     */
+    public function updateDetails(User $user, Task $task): bool
+    {
+        return $user->id === $task->project->creator_id || $user->id === $task->creator_id;
+    }
+
+    /**
+     * Izin untuk mengubah status tugas.
+     * PERBAIKAN DI SINI: Hanya pembuat tugas (creator_id) yang bisa mengubah status.
+     */
+    public function updateStatus(User $user, Task $task): bool
+    {
+        return $user->id === $task->creator_id;
+    }
+
+    /**
+     * Izin untuk menghapus tugas.
      */
     public function delete(User $user, Task $task): bool
     {
-        // Hanya pembuat proyek atau pembuat tugas yang bisa menghapus.
-        return $user->id === $task->project->creator_id || $user->id === $task->creator_id;
+        // Hanya pembuat yang bisa menghapus.
+        return $this->updateDetails($user, $task);
     }
 }

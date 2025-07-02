@@ -139,27 +139,26 @@ function getTimelineDetails($type) {
                             <form action="{{ route('tasks.update', $task->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
-                                <div class="mb-2"><input type="text" name="name" value="{{ $task->name }}" class="form-control form-control-sm" required></div>
-                                <div class="mb-2"><textarea name="description" rows="2" class="form-control form-control-sm">{{ $task->description }}</textarea></div>
+                                <div class="mb-2"><input type="text" name="name" value="{{ $task->name }}" class="form-control form-control-sm" required @cannot('updateDetails', $task) disabled @endcannot></div>
+                                <div class="mb-2"><textarea name="description" rows="2" class="form-control form-control-sm" @cannot('updateDetails', $task) disabled @endcannot>{{ $task->description }}</textarea></div>
                                 <div class="row">
                                     <div class="col-md-4 mb-2">
-                                         <select name="assigned_to" class="form-select form-select-sm">
+                                         <select name="assigned_to" class="form-select form-select-sm" @cannot('updateDetails', $task) disabled @endcannot>
                                             @foreach ($assignableUsers as $user)
                                                 <option value="{{ $user->id }}" @selected($task->assigned_to == $user->id)>{{ $user->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4 mb-2"><input type="date" name="due_date" value="{{ $task->due_date?->format('Y-m-d') }}" class="form-control form-control-sm"></div>
+                                    <div class="col-md-4 mb-2"><input type="date" name="due_date" value="{{ $task->due_date?->format('Y-m-d') }}" class="form-control form-control-sm" @cannot('updateDetails', $task) disabled @endcannot></div>
                                     <div class="col-md-4 mb-2">
-                                        <select name="status" class="form-select form-select-sm" required @if(auth()->id() !== $task->creator_id) disabled @endif>
+                                        <select name="status" class="form-select form-select-sm" required @cannot('updateStatus', $task) disabled @endcannot>
                                             <option value="pending" @selected($task->status == 'pending')>Tertunda</option>
                                             <option value="in_progress" @selected($task->status == 'in_progress')>Dalam Proses</option>
                                             <option value="completed" @selected($task->status == 'completed')>Selesai</option>
                                         </select>
-                                        @if(auth()->id() !== $task->creator_id)
+                                        @cannot('updateDetails', $task)
                                             <input type="hidden" name="status" value="{{ $task->status }}">
-                                            <small class="text-muted">Hanya pembuat tugas yang bisa mengubah status.</small>
-                                        @endif
+                                        @endcannot
                                     </div>
                                 </div>
                                 <div class="mt-2">
@@ -179,8 +178,98 @@ function getTimelineDetails($type) {
                     <div class="text-center py-4 text-muted">Belum ada tugas untuk proyek ini.</div>
                 @endforelse
             </div>
-            <div class="tab-pane p-3" id="files-tab" role="tabpanel"><p class="text-muted">Fitur File akan kita aktifkan di langkah selanjutnya.</p></div>
-            <div class="tab-pane p-3" id="chat-tab" role="tabpanel"><p class="text-muted">Fitur Diskusi akan kita aktifkan di langkah selanjutnya.</p></div>
+           <div class="tab-pane p-3" id="files-tab" role="tabpanel">
+                @can('addFile', $project)
+                <div class="card card-body mb-4">
+                    <h4 class="card-title">Unggah File Baru</h4>
+                    <p class="card-subtitle">Pilih file untuk diunggah ke proyek (Maks: 10MB).</p>
+                    <form action="{{ route('projects.attachments.store', $project->id) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                         @csrf
+                        <div class="input-group">
+                            <input class="form-control" type="file" name="file" id="file_upload" required>
+                            <button type="submit" class="btn btn-primary">Unggah File</button>
+                        </div>
+                        @error('file')<p class="text-danger mt-1 fs-2">{{ $message }}</p>@enderror
+                    </form>
+                </div>
+                @endcan
+
+                <h4 class="card-title fw-semibold">Daftar File Proyek</h4>
+                @forelse ($project->attachments as $file)
+                <div class="d-flex align-items-center gap-3 py-3 border-bottom">
+                    <div class="round text-bg-light d-flex align-items-center justify-content-center rounded-circle">
+                        <i class="ti ti-file-text fs-6"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-semibold">
+                            <a href="{{ route('attachments.download', $file->id) }}">{{ $file->file_name }}</a>
+                        </h6>
+                        <span class="fs-2">Diunggah oleh: {{ $file->uploader->name ?? 'N/A' }}</span>
+                    </div>
+                    <div class="ms-auto text-end">
+                        <span class="fs-2">{{ $file->created_at->format('d M Y, H:i') }}</span>
+                    </div>
+                    @can('delete', $file)
+                    <div class="ms-2">
+                         <form action="{{ route('attachments.destroy', $file->id) }}" method="POST" onsubmit="return confirm('Hapus file ini?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="border-0 bg-transparent text-dark bg-hover-danger p-2 rounded-circle"><i class="ti ti-trash"></i></button>
+                        </form>
+                    </div>
+                    @endcan
+                </div>
+                @empty
+                    <div class="text-center py-4 text-muted">Belum ada file yang diunggah untuk proyek ini.</div>
+                @endforelse
+            </div>
+            <div class="tab-pane p-3" id="chat-tab" role="tabpanel">
+                <div class="card overflow-hidden chat-application">
+                    <div class="d-flex">
+                        <div class="w-100">
+                            <div class="chat-container h-100 w-100">
+                                <div class="chat-box-inner-part h-100">
+                                    <div class="chat-box-inner" style="height: 500px; overflow-y: auto;">
+                                        <div class="chat-list chat active-chat p-3">
+                                            @forelse ($project->messages->sortBy('created_at') as $message)
+                                                @if ($message->sender_id === auth()->id())
+                                                    <div class="hstack gap-3 align-items-start mb-7 justify-content-end">
+                                                        <div class="text-end">
+                                                            <h6 class="fs-2 text-muted">{{ $message->created_at->diffForHumans() }}</h6>
+                                                            <div class="p-2 bg-info-subtle text-dark rounded-1 d-inline-block fs-3">
+                                                                {{ $message->content }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <div class="hstack gap-3 align-items-start mb-7 justify-content-start">
+                                                        <img src="{{ asset('assets/images/profile/user-'.( ($message->sender_id % 5) + 1).'.jpg') }}" alt="user" width="40" height="40" class="rounded-circle" />
+                                                        <div>
+                                                            <h6 class="fs-2 text-muted">{{ $message->sender->name ?? 'Pengguna' }}, {{ $message->created_at->diffForHumans() }}</h6>
+                                                            <div class="p-2 text-bg-light rounded-1 d-inline-block text-dark fs-3">
+                                                                {{ $message->content }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @empty
+                                                 <p class="text-center text-muted">Belum ada pesan. Mulai diskusi!</p>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                    <div class="px-3 py-2 border-top chat-send-message-footer">
+                                        <form action="{{ route('projects.messages.store', $project->id) }}" method="POST" class="d-flex align-items-center justify-content-between">
+                                            @csrf
+                                            <input type="text" name="content" class="form-control message-type-box text-muted border-0 p-0 ms-2" placeholder="Ketik pesan Anda..." required>
+                                            <button type="submit" class="btn btn-primary"><i class="ti ti-send"></i></button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="tab-pane p-3" id="timeline-tab" role="tabpanel">
                 <div class="card-body">
                     <h4 class="card-title fw-semibold">Timeline Proyek</h4>
@@ -201,7 +290,6 @@ function getTimelineDetails($type) {
                                     $timelineEvents->push(['date' => $task->updated_at, 'type' => 'Tugas', 'title' => 'Tugas Selesai: ' . $task->name, 'description' => 'Tugas telah ditandai selesai.']);
                                 }
                             }
-                            // PERBAIKAN: Gunakan ->values() setelah sortByDesc untuk mereset key array
                             $timelineEvents = $timelineEvents->whereNotNull('date')->sortByDesc('date')->values();
                         @endphp
 
@@ -235,7 +323,6 @@ function getTimelineDetails($type) {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script>
     function toggleEdit(taskId) {
-        // Sembunyikan semua form edit lain dan tampilkan semua view lain
         document.querySelectorAll('[id^="task-edit-"]').forEach(el => {
             if (el.id !== 'task-edit-' + taskId) {
                 el.style.display = 'none';
@@ -247,7 +334,6 @@ function getTimelineDetails($type) {
             }
         });
 
-        // Toggle elemen yang dipilih
         const viewDiv = document.getElementById('task-view-' + taskId);
         const editDiv = document.getElementById('task-edit-' + taskId);
 

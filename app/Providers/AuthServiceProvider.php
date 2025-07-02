@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Policies\ProjectPolicy;
 use App\Policies\TaskPolicy;
 use App\Policies\UserPolicy;
+use App\Models\Attachment;
+use App\Policies\AttachmentPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -25,6 +27,7 @@ class AuthServiceProvider extends ServiceProvider
         JobTitle::class => JobTitlePolicy::class,
         Project::class => ProjectPolicy::class, // Akan kita buat nanti
         Task::class => TaskPolicy::class,
+        Attachment::class => AttachmentPolicy::class,
     ];
 
     /**
