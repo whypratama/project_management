@@ -17,8 +17,59 @@ class TaskPolicy
     }
 
     /**
+     * Tentukan apakah user bisa melihat detail tugas.
+     */
+    public function view(User $user, Task $task): bool
+    {
+        // Aturan 1: Izinkan jika user adalah pembuat tugas.
+        if ($user->id === $task->creator_id) {
+            return true;
+        }
+
+        // Aturan 2: Izinkan jika user adalah orang yang ditugaskan (pemilik tugas).
+        if ($user->id === $task->assigned_to) {
+            return true;
+        }
+
+        // Aturan 3: Izinkan jika user adalah atasan dari orang yang ditugaskan.
+        if ($task->assignee && $user->organization) {
+            // Cek apakah organisasi si penugas ada di dalam lingkup organisasi user saat ini.
+            $managerOrgScopeIds = array_unique(array_merge([$user->organization->id], $user->organization->getAllChildIds()));
+            if (in_array($task->assignee->organization_id, $managerOrgScopeIds)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    public function upload(User $user, Task $task): bool
+    {
+        // Aturan 1: Izinkan jika user adalah pembuat tugas.
+        if ($user->id === $task->creator_id) {
+            return true;
+        }
+
+        // Aturan 2: Izinkan jika user adalah orang yang ditugaskan (pemilik tugas).
+        if ($user->id === $task->assigned_to) {
+            return true;
+        }
+
+        // Aturan 3: Izinkan jika user adalah atasan dari orang yang ditugaskan.
+        if ($task->assignee && $user->organization) {
+            // Cek apakah organisasi si penugas ada di dalam lingkup organisasi user saat ini.
+            $managerOrgScopeIds = array_unique(array_merge([$user->organization->id], $user->organization->getAllChildIds()));
+            if (in_array($task->assignee->organization_id, $managerOrgScopeIds)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Izin umum untuk membuka form edit.
-     * User bisa membuka form jika ia bisa mengubah detail ATAU status.
      */
     public function update(User $user, Task $task): bool
     {
@@ -27,7 +78,6 @@ class TaskPolicy
 
     /**
      * Izin untuk mengubah detail tugas (nama, deskripsi, dll).
-     * Hanya pembuat proyek atau pembuat tugas yang bisa.
      */
     public function updateDetails(User $user, Task $task): bool
     {
@@ -36,7 +86,6 @@ class TaskPolicy
 
     /**
      * Izin untuk mengubah status tugas.
-     * PERBAIKAN DI SINI: Hanya pembuat tugas (creator_id) yang bisa mengubah status.
      */
     public function updateStatus(User $user, Task $task): bool
     {
@@ -48,7 +97,6 @@ class TaskPolicy
      */
     public function delete(User $user, Task $task): bool
     {
-        // Hanya pembuat yang bisa menghapus.
         return $this->updateDetails($user, $task);
     }
 }

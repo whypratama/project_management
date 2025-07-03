@@ -1,16 +1,3 @@
-@php
-// Helper untuk menentukan ikon dan warna badge timeline
-function getTimelineDetails($type) {
-    switch (strtolower($type)) {
-        case 'proyek': return ['icon' => 'ti ti-flag-checkered', 'badge_class' => 'border-primary'];
-        case 'tugas': return ['icon' => 'ti ti-list-check', 'badge_class' => 'border-info'];
-        case 'file': return ['icon' => 'ti ti-file-text', 'badge_class' => 'border-purple'];
-        case 'diskusi': return ['icon' => 'ti ti-message-dots', 'badge_class' => 'border-warning'];
-        default: return ['icon' => 'ti ti-clock', 'badge_class' => 'border-secondary'];
-    }
-}
-@endphp
-
 @extends('layouts.main')
 
 @section('header')
@@ -122,7 +109,10 @@ function getTimelineDetails($type) {
                     <div class="py-3 border-bottom">
                         <div id="task-view-{{ $task->id }}" class="d-flex align-items-center">
                             <div>
-                                <h6 class="mb-0 fw-semibold">{{ $task->name }}</h6>
+                                {{-- PERUBAHAN DI SINI: Nama tugas sekarang menjadi link --}}
+                                <h6 class="mb-0 fw-semibold">
+                                    <a href="{{ route('tasks.show', $task->id) }}">{{ $task->name }}</a>
+                                </h6>
                                 <span class="fs-2 text-muted">{{ Str::limit($task->description, 60) }}</span>
                             </div>
                             <div class="ms-auto text-end">

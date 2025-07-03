@@ -48,6 +48,13 @@ Route::middleware('auth')->group(function () {
     // Rute untuk pesan (diskusi)
     Route::post('projects/{project}/messages', [MessageController::class, 'store'])->name('projects.messages.store');
 
+    // Rute untuk Detail Tugas
+    Route::get('tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
+
+    // Rute untuk fungsionalitas di dalam tugas
+    Route::post('tasks/{task}/attachments', [AttachmentController::class, 'storeForTask'])->name('tasks.attachments.store');
+    Route::post('tasks/{task}/messages', [MessageController::class, 'storeForTask'])->name('tasks.messages.store');
+
 });
 
 // Route autentikasi bawaan Breeze

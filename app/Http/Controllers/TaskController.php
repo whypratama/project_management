@@ -61,6 +61,16 @@ class TaskController extends BaseController
         return back()->with('success', 'Tugas berhasil diperbarui.');
     }
 
+    public function show(Task $task)
+    {
+        $this->authorize('view', $task);
+
+        $task->load(['project', 'assignee', 'creator', 'messages.sender', 'attachments.uploader']);
+
+        return view('tasks.show', compact('task'));
+    }
+
+
     public function destroy(Task $task)
     {
         $this->authorize('delete', $task);
